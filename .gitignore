@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.python/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/next-env.d.ts
+
+# CA riêng của máy (antivirus TLS scanning)
+infra/docker/certs/*.crt
+
+# Data (never commit PDFs or local volumes)
+data/
+*.pdf
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

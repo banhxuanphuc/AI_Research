@@ -1,0 +1,162 @@
+# AI Research Scientist - môi trường local.
+#
+# Profiles (bật dần theo nhu cầu, máy 8 GB RAM không nên bật tất cả cùng lúc):
+#   (mặc định)  postgres, redis, qdrant, minio, api, worker, web
+#   ai          grobid (CRF, nhẹ), tei-embed (bge-m3, CPU)
+#   rerank      tei-rerank (bge-reranker-v2-m3, CPU) - bật từ tuần 4
+#   graph       neo4j - phase 2
+#   ollama      ollama - provider LLM thứ 2 chạy local
+#
+# Ví dụ:  docker compose up -d --build
+#         docker compose --profile ai up -d
+
+name: ars
+
+x-python: &python
+  build:
+    context: .
+    dockerfile: infra/docker/python.Dockerfile
+  image: ars-python:dev
+  env_file: .env
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    qdrant: { condition: service_started }
+    minio: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.20.0  # giữ cùng minor với qdrant-client trong uv.lock
+    # Lưu ý: Qdrant chỉ nâng cấp storage từng minor một (1.19 -> 1.20), không nhảy cóc.
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+    ports: ["127.0.0.1:6333:6333"]
+    volumes: [qdrantdata:/qdrant/storage]
+    restart: unless-stopped
+
+  minio:
+    # MinIO đã ngừng phát hành image community trên Docker Hub; dùng bản đóng gói bitnami
+    # (legacy, không còn cập nhật). Muốn thay: bất kỳ server S3-compatible nào (vd RustFS).
+    image: bitnamilegacy/minio:2025.7.23
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: ${MINIO_BUCKET:-papers}
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+    volumes: [miniodata:/bitnami/minio/data]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    <<: *python
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn research_scientist.api.main:app --host 0.0.0.0 --port 8000"
+    ports: ["127.0.0.1:8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    <<: *python
+    command: arq research_scientist.worker.main.WorkerSettings
+
+  web:
+    build:
+      context: apps/web
+      additional_contexts:
+        certs: ./infra/docker/certs
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    image: ars-web:dev
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: [api]
+    restart: unless-stopped
+
+  # ---------------- profile: ai ----------------
+  grobid:
+    profiles: ["ai"]
+    image: lfoppiano/grobid:0.8.2  # bản CRF-only, nhẹ; bản deep-learning là grobid/grobid
+    ports: ["127.0.0.1:8070:8070"]
+    mem_limit: 3g
+    restart: unless-stopped
+
+  tei-embed:
+    profiles: ["ai"]
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+    command: --model-id ${EMBED_MODEL:-BAAI/bge-m3} --max-batch-tokens 8192
+    ports: ["127.0.0.1:8081:80"]
+    volumes: [hfcache:/data]
+    mem_limit: 3g
+    restart: unless-stopped
+
+  # ---------------- profile: rerank ----------------
+  tei-rerank:
+    profiles: ["rerank"]
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+    command: --model-id ${RERANK_MODEL:-BAAI/bge-reranker-v2-m3}
+    ports: ["127.0.0.1:8082:80"]
+    volumes: [hfcache:/data]
+    mem_limit: 3g
+    restart: unless-stopped
+
+  # ---------------- profile: graph ----------------
+  neo4j:
+    profiles: ["graph"]
+    image: neo4j:5.26-community
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-change-me-neo4j}
+      NEO4J_server_memory_heap_max__size: 1G
+    ports: ["127.0.0.1:7474:7474", "127.0.0.1:7687:7687"]
+    volumes: [neo4jdata:/data]
+    restart: unless-stopped
+
+  # ---------------- profile: ollama ----------------
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:0.12.3
+    ports: ["127.0.0.1:11434:11434"]
+    volumes: [ollamadata:/root/.ollama]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  qdrantdata:
+  miniodata:
+  hfcache:
+  neo4jdata:
+  ollamadata:
