@@ -26,6 +26,21 @@ def test_quote_matching_tolerates_whitespace_but_not_fabrication():
     assert not quote_in_chunk("top-1 accuracy improves to 52.4%", CHUNKS["c3"])
 
 
+def test_quote_matching_handles_pdf_artifacts_from_real_papers():
+    chunk = (
+        "Intuitively, a better estimation of the ef- fective number of samples could be "
+        "obtained. This makes our loss generally applicable. We deﬁne the weighting factor."
+    )
+    # line-break hyphenation + ligature
+    assert quote_in_chunk("a better estimation of the effective number of samples", chunk)
+    assert quote_in_chunk("We define the weighting factor", chunk)
+    # ellipsis joining two real segments, in order
+    assert quote_in_chunk("Intuitively, a better estimation ... generally applicable", chunk)
+    # segments out of order or invented segment must fail
+    assert not quote_in_chunk("generally applicable ... Intuitively, a better estimation", chunk)
+    assert not quote_in_chunk("Intuitively ... we use a transformer backbone", chunk)
+
+
 def test_verify_card_counts_verified_unknown_and_mismatch():
     card = PaperCard(
         research_problem=TextField(

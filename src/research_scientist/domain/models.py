@@ -213,6 +213,11 @@ class PaperCardRecord(TimestampMixin, Base):
     model: Mapped[str] = mapped_column(String(100))
     card: Mapped[dict] = mapped_column(JSONB)
     evidence_coverage: Mapped[float | None] = mapped_column(Float)
+    evidence_report: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0, server_default="0")
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 # --- Claims & evidence ----------------------------------------------------------------

@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 import httpx
 from lxml import etree
 
+from research_scientist.ingestion.text import clean_text
+
 TEI_NS = {"tei": "http://www.tei-c.org/ns/1.0"}
 PARSER_NAME = "grobid"
 
@@ -60,7 +62,7 @@ class GrobidClient:
 
 
 def _text(el: etree._Element) -> str:
-    return " ".join("".join(el.itertext()).split())
+    return " ".join(clean_text("".join(el.itertext())).split())
 
 
 def _first_page(el: etree._Element) -> int | None:
