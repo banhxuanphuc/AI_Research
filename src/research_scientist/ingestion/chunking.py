@@ -68,34 +68,31 @@ def chunk_sections(sections: list[ParsedSection], max_chars: int = 2000) -> list
             cursor += len(para.text) + len(SEPARATOR)
 
         buf: list[tuple[int, Paragraph]] = []
-
-        def flush() -> None:
-            if not buf:
-                return
-            text = SEPARATOR.join(p.text for _, p in buf)
-            start = buf[0][0]
-            end = buf[-1][0] + len(buf[-1][1].text)
-            chunks.append(
-                ChunkDraft(
-                    ordinal=len(chunks),
-                    section_index=s_idx,
-                    section_path=section.path,
-                    page=buf[0][1].page,
-                    char_start=start,
-                    char_end=end,
-                    text=text,
-                )
-            )
-            buf.clear()
-
         size = 0
         for pos, piece in units:
             extra = len(piece.text) + (len(SEPARATOR) if buf else 0)
             if buf and size + extra > max_chars:
-                flush()
+                chunks.append(_make_chunk(buf, len(chunks), s_idx, section.path))
+                buf = []
                 size = 0
                 extra = len(piece.text)
             buf.append((pos, piece))
             size += extra
-        flush()
+        if buf:
+            chunks.append(_make_chunk(buf, len(chunks), s_idx, section.path))
     return chunks
+
+
+def _make_chunk(
+    buf: list[tuple[int, Paragraph]], ordinal: int, section_index: int, section_path: str
+) -> ChunkDraft:
+    """Build one chunk from consecutive (offset, paragraph) units of the same section."""
+    return ChunkDraft(
+        ordinal=ordinal,
+        section_index=section_index,
+        section_path=section_path,
+        page=buf[0][1].page,
+        char_start=buf[0][0],
+        char_end=buf[-1][0] + len(buf[-1][1].text),
+        text=SEPARATOR.join(p.text for _, p in buf),
+    )

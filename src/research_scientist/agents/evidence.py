@@ -12,7 +12,6 @@ from rapidfuzz import fuzz
 
 from research_scientist.schemas.paper_card import KEY_FIELDS, Evidence, PaperCard
 
-
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 _HYPHEN_BREAK = re.compile(r"(\w)-\s+(?=[a-z])")  # "con- tains" -> "contains" (PDF line break)
 _ELLIPSIS = re.compile(r"\s*(?:\.\.\.|…|\[\.\.\.\])\s*")
@@ -82,7 +81,9 @@ def _collect(obj: object, path: str, out: list[tuple[str, Evidence]]) -> None:
 
 
 def _has_verified_evidence(ok_paths: set[str], field_name: str) -> bool:
-    return any(p == field_name or p.startswith((f"{field_name}.", f"{field_name}[")) for p in ok_paths)
+    return any(
+        p == field_name or p.startswith((f"{field_name}.", f"{field_name}[")) for p in ok_paths
+    )
 
 
 def verify_card(card: PaperCard, chunks: dict[str, str]) -> EvidenceReport:
@@ -100,7 +101,5 @@ def verify_card(card: PaperCard, chunks: dict[str, str]) -> EvidenceReport:
         else:
             report.verified += 1
             ok_paths.add(path)
-    report.key_fields_with_evidence = sum(
-        _has_verified_evidence(ok_paths, f) for f in KEY_FIELDS
-    )
+    report.key_fields_with_evidence = sum(_has_verified_evidence(ok_paths, f) for f in KEY_FIELDS)
     return report

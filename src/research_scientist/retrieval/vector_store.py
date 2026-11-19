@@ -26,7 +26,9 @@ class ChunkVectorStore:
             return
         await self._client.create_collection(
             collection_name=self.collection,
-            vectors_config={DENSE: models.VectorParams(size=self.dim, distance=models.Distance.COSINE)},
+            vectors_config={
+                DENSE: models.VectorParams(size=self.dim, distance=models.Distance.COSINE)
+            },
             # Sparse vector (BM25/SPLADE) sẽ thêm ở tuần 4 cho hybrid search
         )
         for field, schema in (

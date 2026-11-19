@@ -101,7 +101,9 @@ class ClaudeProvider:
         self._check_stop(response, model)
         parsed = response.parsed_output
         if parsed is None:
-            raise LLMOutputInvalidError(f"{model} returned no parsable output for {schema.__name__}")
+            raise LLMOutputInvalidError(
+                f"{model} returned no parsable output for {schema.__name__}"
+            )
         return self._result(parsed, response, model, started)
 
     async def text(

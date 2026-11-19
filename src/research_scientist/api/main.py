@@ -47,7 +47,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             log.warning("MinIO not ready - bucket not ensured", exc_info=True)
         try:
-            await ChunkVectorStore(s.qdrant_url, s.qdrant_collection, s.embed_dim).ensure_collection()
+            await ChunkVectorStore(
+                s.qdrant_url, s.qdrant_collection, s.embed_dim
+            ).ensure_collection()
         except Exception:
             log.warning("Qdrant not ready - collection not ensured", exc_info=True)
         yield

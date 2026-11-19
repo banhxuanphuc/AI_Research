@@ -11,7 +11,9 @@ DEFAULT_WORKSPACE_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
 async def ensure_default_workspace(session: AsyncSession) -> uuid.UUID:
-    existing = await session.scalar(select(Workspace.id).where(Workspace.id == DEFAULT_WORKSPACE_ID))
+    existing = await session.scalar(
+        select(Workspace.id).where(Workspace.id == DEFAULT_WORKSPACE_ID)
+    )
     if existing is None:
         session.add(Workspace(id=DEFAULT_WORKSPACE_ID, name="Default"))
         await session.commit()

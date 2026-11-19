@@ -102,7 +102,9 @@ async def register_pdf(
     link = await session.get(ProjectPaper, (project_id, paper.id))
     if link is None:
         session.add(
-            ProjectPaper(project_id=project_id, paper_id=paper.id, status=ProjectPaperStatus.included)
+            ProjectPaper(
+                project_id=project_id, paper_id=paper.id, status=ProjectPaperStatus.included
+            )
         )
     await session.commit()
     return Registered(paper=paper, version=version, is_new_version=is_new)

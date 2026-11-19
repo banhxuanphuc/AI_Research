@@ -57,7 +57,9 @@ def test_verify_card_counts_verified_unknown_and_mismatch():
             DatasetUse(name="ImageNet-LT", evidence=[Evidence(chunk_id="c3", quote="ImageNet-LT")])
         ],
         baselines=[],
-        metrics=[ListItem(value="top-1", evidence=[Evidence(chunk_id="c3", quote="top-1 accuracy")])],
+        metrics=[
+            ListItem(value="top-1", evidence=[Evidence(chunk_id="c3", quote="top-1 accuracy")])
+        ],
         results=[
             ResultEntry(
                 metric="top-1",

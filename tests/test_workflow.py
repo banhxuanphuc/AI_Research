@@ -25,8 +25,12 @@ async def _noop(record) -> None:
 async def fake_discover(brief, inp):
     assert brief.search_queries == BRIEF.search_queries
     return [
-        PaperCandidate(title="Class-Balanced Loss Based on Effective Number of Samples", doi="10.1/cb"),
-        PaperCandidate(title="Class-balanced loss based on effective number of samples", doi="10.1/cb"),
+        PaperCandidate(
+            title="Class-Balanced Loss Based on Effective Number of Samples", doi="10.1/cb"
+        ),
+        PaperCandidate(
+            title="Class-balanced loss based on effective number of samples", doi="10.1/cb"
+        ),
         PaperCandidate(title="Decoupling Representation and Classifier", arxiv_id="1910.09217"),
     ]
 
@@ -58,7 +62,9 @@ async def test_workflow_pauses_for_brief_then_selection():
     await graph.ainvoke(Command(resume={"selected_indices": [1, 99]}), config)
     snap = await graph.aget_state(config)
     assert snap.next == ()
-    assert [c["title"] for c in snap.values["selected"]] == ["Decoupling Representation and Classifier"]
+    assert [c["title"] for c in snap.values["selected"]] == [
+        "Decoupling Representation and Classifier"
+    ]
 
 
 async def test_rejected_brief_ends_without_discovery():

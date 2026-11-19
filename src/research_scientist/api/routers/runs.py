@@ -60,7 +60,9 @@ async def _snapshot(graph, run: WorkflowRun) -> RunState:
     )
 
 
-async def _invoke(session: AsyncSession, run: WorkflowRun, graph, payload: Any, config: dict) -> None:
+async def _invoke(
+    session: AsyncSession, run: WorkflowRun, graph, payload: Any, config: dict
+) -> None:
     """Chạy graph tới interrupt tiếp theo; lỗi thì đánh dấu run failed (checkpoint vẫn còn,
     có thể resume sau khi sửa nguyên nhân, vd thiếu ANTHROPIC_API_KEY)."""
     try:
@@ -68,7 +70,9 @@ async def _invoke(session: AsyncSession, run: WorkflowRun, graph, payload: Any, 
     except Exception as exc:
         run.status = "failed"
         await session.commit()
-        raise HTTPException(502, f"Workflow lỗi ở bước LLM/tool: {type(exc).__name__}: {exc}") from exc
+        raise HTTPException(
+            502, f"Workflow lỗi ở bước LLM/tool: {type(exc).__name__}: {exc}"
+        ) from exc
 
 
 async def _sync_run(session: AsyncSession, run: WorkflowRun, state: RunState) -> None:
@@ -99,7 +103,9 @@ async def start_run(
     return state
 
 
-async def _get_run(session: AsyncSession, run_id: uuid.UUID, workspace_id: uuid.UUID) -> WorkflowRun:
+async def _get_run(
+    session: AsyncSession, run_id: uuid.UUID, workspace_id: uuid.UUID
+) -> WorkflowRun:
     run = await session.get(WorkflowRun, run_id)
     if run is None:
         raise HTTPException(404, "Run not found")
