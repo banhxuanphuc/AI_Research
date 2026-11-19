@@ -76,7 +76,9 @@ class SemanticScholarClient:
             abstract=p.get("abstract"),
             url=p.get("url"),
             open_access_pdf=oa.get("url") or None,
-            is_preprint=bool(ext.get("ArXiv")) and not ext.get("DOI") and "JournalArticle" not in types,
+            is_preprint=bool(ext.get("ArXiv"))
+            and not ext.get("DOI")
+            and "JournalArticle" not in types,
             sources=["semantic_scholar"],
         )
 

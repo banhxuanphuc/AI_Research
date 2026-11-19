@@ -61,6 +61,19 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependency markers are meant to be used as default arguments
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Query",
+    "fastapi.Header",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["research_scientist", "tests"]
+
 [tool.mypy]
 python_version = "3.12"
 plugins = ["pydantic.mypy"]

@@ -13,7 +13,13 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
-from research_scientist.providers.base import LLMOutputInvalidError, LLMResult, T, Usage, UserContent
+from research_scientist.providers.base import (
+    LLMOutputInvalidError,
+    LLMResult,
+    T,
+    Usage,
+    UserContent,
+)
 from research_scientist.providers.models import Effort
 
 PREFIX = "ollama:"
@@ -28,7 +34,9 @@ def _flatten(user: UserContent) -> str:
             parts.append(block["text"])
         elif block.get("type") == "document":
             src = block.get("source", {})
-            parts.append(f"<document title={block.get('title', '')!r}>\n{src.get('data', '')}\n</document>")
+            parts.append(
+                f"<document title={block.get('title', '')!r}>\n{src.get('data', '')}\n</document>"
+            )
     return "\n\n".join(parts)
 
 

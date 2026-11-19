@@ -79,7 +79,9 @@ class JobOut(BaseModel):
     job_id: str | None
 
 
-async def _enqueue_ingest(request: Request, reg: Registered, workspace_id: uuid.UUID, card: bool) -> IngestOut:
+async def _enqueue_ingest(
+    request: Request, reg: Registered, workspace_id: uuid.UUID, card: bool
+) -> IngestOut:
     job = None
     # parser is set only after a successful ingest -> re-ingest versions that failed before
     if reg.is_new_version or reg.version.parser is None:
@@ -202,7 +204,9 @@ async def request_card(
 ) -> JobOut:
     """Xếp hàng trích PaperCard (chạy lại được, vd để so sánh model qua `?model=`)."""
     has_chunks = await session.scalar(
-        select(Chunk.id).where(Chunk.paper_id == paper_id, Chunk.workspace_id == workspace_id).limit(1)
+        select(Chunk.id)
+        .where(Chunk.paper_id == paper_id, Chunk.workspace_id == workspace_id)
+        .limit(1)
     )
     if has_chunks is None:
         raise HTTPException(409, "Paper chưa được ingest (chưa có chunk)")
@@ -219,7 +223,9 @@ async def get_latest_card(
     workspace_id: uuid.UUID = Depends(current_workspace_id),
 ) -> PaperCardRecord:
     owned = await session.scalar(
-        select(Chunk.id).where(Chunk.paper_id == paper_id, Chunk.workspace_id == workspace_id).limit(1)
+        select(Chunk.id)
+        .where(Chunk.paper_id == paper_id, Chunk.workspace_id == workspace_id)
+        .limit(1)
     )
     card = await session.scalar(
         select(PaperCardRecord)

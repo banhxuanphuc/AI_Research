@@ -25,7 +25,9 @@ async def ingest_pdf(
         if then_extract_card and result["chunks"]:
             version = await session.get(PaperVersion, uuid.UUID(version_id))
             assert version is not None
-            job = await ctx["redis"].enqueue_job("extract_card", str(version.paper_id), workspace_id)
+            job = await ctx["redis"].enqueue_job(
+                "extract_card", str(version.paper_id), workspace_id
+            )
             result["card_job_id"] = job.job_id if job else None
         return result
 

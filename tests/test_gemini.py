@@ -65,7 +65,10 @@ def test_thinking_level_only_for_gemini_3_plus():
 
 def test_document_blocks_are_flattened():
     text = to_gemini_contents(
-        [{"type": "text", "text": "Q?"}, {"type": "document", "title": "P", "source": {"data": "body"}}]
+        [
+            {"type": "text", "text": "Q?"},
+            {"type": "document", "title": "P", "source": {"data": "body"}},
+        ]
     )
     assert text == "Q?\n\n<document title='P'>\nbody\n</document>"
 
@@ -73,7 +76,12 @@ def test_document_blocks_are_flattened():
 async def test_structured_output_is_validated_and_usage_counted(provider):
     provider.install(fake_response('{"scope": "long-tail", "queries": ["a", "b"]}'))
     result = await provider.structured(
-        model="gemini-4-hydrogen", system="sys", user="u", schema=Brief, effort="high", max_tokens=1000
+        model="gemini-4-hydrogen",
+        system="sys",
+        user="u",
+        schema=Brief,
+        effort="high",
+        max_tokens=1000,
     )
     assert result.output == Brief(scope="long-tail", queries=["a", "b"])
     assert result.provider == "gemini"
@@ -106,7 +114,12 @@ async def test_failures_map_to_gateway_errors(provider, response, error):
     provider.install(response)
     with pytest.raises(error):
         await provider.structured(
-            model="gemini-4-hydrogen", system="s", user="u", schema=Brief, effort="low", max_tokens=10
+            model="gemini-4-hydrogen",
+            system="s",
+            user="u",
+            schema=Brief,
+            effort="low",
+            max_tokens=10,
         )
 
 

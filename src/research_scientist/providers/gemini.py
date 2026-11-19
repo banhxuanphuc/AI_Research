@@ -76,7 +76,9 @@ def to_gemini_contents(user: UserContent) -> str:
             parts.append(block["text"])
         elif block.get("type") == "document":
             src = block.get("source", {})
-            parts.append(f"<document title={block.get('title', '')!r}>\n{src.get('data', '')}\n</document>")
+            parts.append(
+                f"<document title={block.get('title', '')!r}>\n{src.get('data', '')}\n</document>"
+            )
     return "\n\n".join(parts)
 
 
@@ -101,7 +103,9 @@ class GeminiProvider:
         return types.GenerateContentConfig(**kwargs)
 
     @_retry
-    async def _generate(self, model: str, contents: str, config: types.GenerateContentConfig) -> Any:
+    async def _generate(
+        self, model: str, contents: str, config: types.GenerateContentConfig
+    ) -> Any:
         return await self._client.aio.models.generate_content(
             model=model, contents=contents, config=config
         )
@@ -134,7 +138,9 @@ class GeminiProvider:
             cache_read_tokens=u.cached_content_token_count or 0,
         )
 
-    def _result[R](self, output: R, response: Any, model: str, finish: str, started: float) -> LLMResult[R]:
+    def _result[R](
+        self, output: R, response: Any, model: str, finish: str, started: float
+    ) -> LLMResult[R]:
         usage = self._usage(response)
         return LLMResult(
             output=output,

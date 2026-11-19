@@ -1,1 +1,1 @@
-﻿"""AI Research Scientist."""
+"""AI Research Scientist."""

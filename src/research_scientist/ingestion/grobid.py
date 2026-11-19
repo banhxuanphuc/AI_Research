@@ -90,9 +90,7 @@ def parse_tei(xml: bytes, parser_version: str | None = None) -> ParsedDocument:
         heading = _text(head) if head is not None else "Untitled"
         path = f"{number} {heading}".strip() if number else heading
         paras = [
-            Paragraph(_text(p), _first_page(p))
-            for p in div.findall("tei:p", TEI_NS)
-            if _text(p)
+            Paragraph(_text(p), _first_page(p)) for p in div.findall("tei:p", TEI_NS) if _text(p)
         ]
         # Caption của hình/bảng đi cùng section chứa nó
         for fig in div.findall(".//tei:figure", TEI_NS):

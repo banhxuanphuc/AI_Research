@@ -109,5 +109,8 @@ async def extract_and_store_card(
     session.add(record)
     await session.commit()
     await session.refresh(record)
-    log.info("paper_card_stored", extra={"extra_fields": {"paper_id": str(paper.id), **record.evidence_report}})
+    log.info(
+        "paper_card_stored",
+        extra={"extra_fields": {"paper_id": str(paper.id), **record.evidence_report}},
+    )
     return record

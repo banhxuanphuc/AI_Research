@@ -168,8 +168,17 @@ class LLMGateway:
             fallback = REFUSAL_FALLBACK.get(model)
             if fallback is None:
                 raise
-            log.warning("refusal, retrying on fallback model", extra={"extra_fields": {
-                "task": task, "model": model, "fallback": fallback, "category": exc.category}})
+            log.warning(
+                "refusal, retrying on fallback model",
+                extra={
+                    "extra_fields": {
+                        "task": task,
+                        "model": model,
+                        "fallback": fallback,
+                        "category": exc.category,
+                    }
+                },
+            )
             fallback_from = model
             result = await call(fallback)
         if self.budget:
