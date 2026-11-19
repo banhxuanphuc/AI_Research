@@ -20,6 +20,7 @@ from tenacity import (
 
 from research_scientist.ingestion.dedup import normalize_arxiv_id, normalize_doi
 from research_scientist.schemas.research import PaperCandidate
+from research_scientist.security.policy import is_allowed_url
 
 USER_AGENT = "ai-research-scientist/0.1 (research prototype)"
 S2_FIELDS = "title,externalIds,authors,year,venue,abstract,url,openAccessPdf,publicationTypes"
@@ -93,6 +94,32 @@ class ArxivClient:
         resp = await self._client.get(self.BASE, params=params)
         resp.raise_for_status()
         return self.parse_feed(resp.content)
+
+    @_retry
+    async def get_by_id(self, arxiv_id: str) -> PaperCandidate | None:
+        resp = await self._client.get(self.BASE, params={"id_list": arxiv_id, "max_results": 1})
+        resp.raise_for_status()
+        papers = self.parse_feed(resp.content)
+        return papers[0] if papers and papers[0].title else None
+
+    @_retry
+    async def download_pdf(self, arxiv_id: str, max_bytes: int = 50 * 1024 * 1024) -> bytes:
+        """Download the open-access PDF; only https://arxiv.org (allowlisted) is contacted."""
+        url = f"https://arxiv.org/pdf/{arxiv_id}"
+        if not is_allowed_url(url):
+            raise ValueError(f"URL not allowed: {url}")
+        async with self._client.stream("GET", url, follow_redirects=True) as resp:
+            resp.raise_for_status()
+            if not is_allowed_url(str(resp.url)):
+                raise ValueError(f"Redirected outside allowlist: {resp.url}")
+            data = bytearray()
+            async for chunk in resp.aiter_bytes():
+                data.extend(chunk)
+                if len(data) > max_bytes:
+                    raise ValueError("PDF larger than limit")
+        if not data.startswith(b"%PDF-"):
+            raise ValueError("Response is not a PDF")
+        return bytes(data)
 
     @classmethod
     def parse_feed(cls, xml: bytes) -> list[PaperCandidate]:

@@ -4,6 +4,7 @@
 """
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel
@@ -13,23 +14,43 @@ from research_scientist.schemas.paper_card import KEY_FIELDS, Evidence, PaperCar
 
 
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+_HYPHEN_BREAK = re.compile(r"(\w)-\s+(?=[a-z])")  # "con- tains" -> "contains" (PDF line break)
+_ELLIPSIS = re.compile(r"\s*(?:\.\.\.|…|\[\.\.\.\])\s*")
 
 
 def _norm(text: str) -> str:
+    text = unicodedata.normalize("NFKC", text)  # ligatures: "ﬁ" -> "fi"
+    text = _HYPHEN_BREAK.sub(r"\1", text)
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
-def quote_in_chunk(quote: str, chunk_text: str, threshold: int = 90) -> bool:
-    q, c = _norm(quote), _norm(chunk_text)
-    if not q:
-        return False
+def _segment_in_chunk(q: str, c: str, threshold: int) -> bool:
     if q in c:
         return True
     # Số liệu phải khớp tuyệt đối: "52.4%" không được coi là gần đúng với "52.3%"
     if any(num not in c for num in _NUMBER.findall(q)):
         return False
-    # cho phép sai khác nhỏ (dấu nối, ký tự PDF) bằng partial ratio
+    # cho phép sai khác nhỏ (ký tự PDF, dấu câu) bằng partial ratio
     return fuzz.partial_ratio(q, c) >= threshold
+
+
+def quote_in_chunk(quote: str, chunk_text: str, threshold: int = 90) -> bool:
+    c = _norm(chunk_text)
+    segments = [s for s in (_norm(p) for p in _ELLIPSIS.split(quote)) if s]
+    if not segments:
+        return False
+    if len(segments) == 1:
+        return _segment_in_chunk(segments[0], c, threshold)
+    # Quote nối bằng "...": mọi đoạn phải có trong chunk, theo đúng thứ tự
+    pos = 0
+    for seg in segments:
+        idx = c.find(seg, pos)
+        if idx < 0:
+            if not _segment_in_chunk(seg, c[pos:], threshold):
+                return False
+            continue
+        pos = idx + len(seg)
+    return True
 
 
 @dataclass

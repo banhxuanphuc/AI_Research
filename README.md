@@ -81,6 +81,10 @@ compose.yaml    Docker Compose có profiles
 5. `POST /runs/{run_id}/resume` với `{"selected_indices": [0, 2]}`: kết thúc.
 6. `POST /projects/{id}/papers/upload`: PDF được lưu vào MinIO, worker parse (GROBID hoặc PyMuPDF), chunk theo section, embed và đưa vào Qdrant.
 7. `GET /papers/{id}/chunks`: xem chunk đã parse.
+8. `POST /projects/{id}/papers/from-arxiv` với `{"arxiv_id": "1901.05555", "extract_card": true}`: lấy PDF open-access, ingest, rồi trích PaperCard.
+9. `GET /papers/{id}/card`: PaperCard mới nhất, kèm `evidence_report` (quote xác minh được, quote sai, mức phủ trường trọng yếu, token, độ trễ). `POST /papers/{id}/card?model=...` để trích lại bằng model khác.
+
+Kết quả thử đầu tiên (Class-Balanced Loss, arXiv 1901.05555, `gemini-4-hydrogen`, parser PyMuPDF): 33 chunk, khoảng 21k token vào và 6.8k token ra, 63 giây. 34/35 quote xác minh được (97,1%), 100% trường trọng yếu có evidence.
 
 ## Việc tiếp theo theo lộ trình
 
